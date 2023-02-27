@@ -6,64 +6,51 @@ import static org.hamcrest.Matchers.*;
 
 public class ChangeUserDataTest {
     private Response response;
-    private String email;
-    private String password;
-    private String name;
     private final UserClient userClient = new UserClient();
     private String token;
     private User user;
+
     @Before
     public void before() {
-        user = User.createUser();
+        user = User.dataForCreateUser();
         response = userClient.createUser(user);
         token = response.then().extract().body().path("accessToken");
     }
+
     @Test
     @DisplayName("смена пароля с авторизацией")
-    public void shouldUpdatePassword() {
-        password = user.getPassword();
-        user.setPassword(password + "password");
+    public void updatePasswordWithLoginTest() {
+        user.setPassword("password123");
         response = userClient.updateUser(user, token);
-        user.setPassword(password);
-        response.then().assertThat().body("success", equalTo(true))
-                .and().statusCode(200);
+        response.then().assertThat().statusCode(200).and().body("success", equalTo(true));
     }
+
     @Test
-    @DisplayName("смена пароля без авторизации")
-    public void updatePasswordShouldBeError() {
-        password = user.getPassword();
-        user.setPassword(password + "password");
+    @DisplayName("проверка получения ошибки при смене пароля без авторизации")
+    public void updatePasswordWithoutLoginTest() {
+        user.setPassword("password123");
         response = userClient.updateUser(user, "null");
-        user.setPassword(password);
-        response.then().assertThat().body("success", equalTo(false))
-                .and().statusCode(401);
+        response.then().assertThat().statusCode(401).and().body("success", equalTo(false));
     }
+
     @Test
-    @DisplayName("смена имени и пароля с авторизацией")
-    public void shouldUpdateEmailAndName() {
-        email = user.getEmail();
-        name = user.getName();
-        user.setEmail(email + "email");
-        user.setName(name + "name");
+    @DisplayName("смена имени и почты с авторизацией")
+    public void updateEmailAndNameWithLoginTest() {
+        user.setEmail("NewEmail@back.ru");
+        user.setName("Emmett");
         response = userClient.updateUser(user, token);
-        user.setEmail(email);
-        user.setName(name);
-        response.then().assertThat().body("success", equalTo(true))
-                .and().statusCode(200);
+        response.then().assertThat().statusCode(200).and().body("success", equalTo(true));
     }
+
     @Test
-    @DisplayName("смена имени и пароля без авторизации")
-    public void updateEmailAndNameShouldBeError() {
-        email = user.getEmail();
-        name = user.getName();
-        user.setEmail(email + "email");
-        user.setName(name + "name");
+    @DisplayName("проверка получения ошибки при смене имени и почты без авторизации")
+    public void updateEmailAndNameWithoutLoginTest() {
+        user.setEmail("NewEmail@back.ru");
+        user.setName("Emmett");
         response = userClient.updateUser(user, "null");
-        user.setEmail(email);
-        user.setName(name);
-        response.then().assertThat().body("success", equalTo(false))
-                .and().statusCode(401);
+        response.then().assertThat().statusCode(401).and().body("success", equalTo(false));
     }
+
     @After
     public void delete() {
         userClient.deleteUser(token);
